@@ -121,3 +121,10 @@ add_executable(loader WIN32
 target_link_directories(loader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/libs)
 target_link_libraries(loader PRIVATE d3d9 ddraw dxguid winmm MinHook.x32)
 target_compile_definitions(loader PRIVATE MH_STATIC)
+
+if(MSVC)
+    set_property(TARGET loader PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    # app.rc embeds the process manifest.
+    # The bundled MinHook only uses Win32 APIs but names the DLL CRT as a default library.
+    target_link_options(loader PRIVATE /MANIFEST:NO /NODEFAULTLIB:msvcrt)
+endif()

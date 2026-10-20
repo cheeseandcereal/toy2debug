@@ -22,17 +22,13 @@ Expect bugs. The goal is to fix Toy Story 2 once and for all so it can be enjoye
 
 ## Modern Window and Resolution Handling
 
-The original resolution selection menu has been completely removed. The driver and window creation logic were rewritten from the ground up.
+The game uses the resolution and mode selected in the launcher and starts on the monitor containing the launcher when Launch Game is clicked. The launcher initially follows the foreground window, or the cursor when no application window is available.
 
-The game now boots directly using the resolution and mode you choose in the loader. This avoids all the issues caused by the original menu and fixes the strange resizing behaviour.
+Windowed and borderless modes keep the requested render resolution, including resolutions larger than a monitor. The full rendered image scales to the client area when the window changes size. Moving a window between monitors does not change its render resolution.
 
-Because the window is fully controlled by the loader, you get correct behaviour in fullscreen, borderless, and windowed modes without flickering or forced scaling.
+Fullscreen selects the target monitor's DirectDraw device and attempts exclusive mode. If the device cannot provide that mode on the selected monitor, the game uses borderless mode at the requested resolution.
 
-## High Resolution Support
-
-Previously, when running without dgVoodoo and using only the primary GPU, the game was hard limited to 1080p. This is a real limitation of ddraw.dll render targets.
-
-DirectDraw has been patched out, removing this limitation entirely. The game can now run at higher resolutions such as 1440p and 4K with real exclusive fullscreen or borderless modes.
+Windowed presentation uses DirectDraw first. Unsupported blits use Windows GDI to display the back buffer in window coordinates, including on secondary monitors and in partially off-screen windows. This fallback copies pixels through CPU memory and can cost more at high resolutions.
 
 ## Release
 

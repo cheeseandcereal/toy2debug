@@ -1,11 +1,14 @@
 #include "Renderer.hpp"
 #include "Utils.hpp"
 #include "Settings.hpp"
+#include "Hooks/WindowHooks.hpp"
 
 #include <windows.h>
 
 int32_t WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int32_t nCmdShow)
 {
+	WindowHooks::selectMonitor();
+
 	Utils::initConsole();
 	Utils::setConsoleTitle("Toy2Debug");
 

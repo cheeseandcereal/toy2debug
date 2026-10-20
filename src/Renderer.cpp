@@ -12,6 +12,8 @@
 #include "Tabs/DebugTab.hpp"
 
 #include "Settings.hpp"
+#include "Hooks/WindowHooks.hpp"
+#include <algorithm>
 #include <cmath>
 
 namespace
@@ -19,12 +21,11 @@ namespace
 	constexpr static std::string_view kAppTitle = "Toy2Debug Loader";
 	constexpr static int32_t kWindowWidth = 600;
 	constexpr static int32_t kWindowHeight = 500;
-	constexpr static int32_t kWindowX = 100;
-	constexpr static int32_t kWindowY = 100;
 
 	static LPDIRECT3D9 g_pD3D = nullptr;
 	static LPDIRECT3DDEVICE9 g_pd3dDevice = nullptr;
 	static D3DPRESENT_PARAMETERS g_d3dpp = {};
+	static float g_dpiScale = 1.0f;
 
 	void cleanupD3DDevice()
 	{
@@ -59,7 +60,19 @@ int32_t Renderer::init()
 	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, wndProc, 0L, 0L, m_hInstance, NULL, NULL, NULL, NULL, kAppTitle.data(), NULL };
 	RegisterClassEx(&wc);
 
-	m_hWnd = CreateWindow(kAppTitle.data(), kAppTitle.data(), WS_OVERLAPPEDWINDOW, kWindowX, kWindowY, kWindowWidth, kWindowHeight, NULL, NULL, wc.hInstance, NULL);
+	const RECT work = WindowHooks::monitorInfo().rcWork;
+	const float scale = ImGui_ImplWin32_GetDpiScaleForMonitor(MonitorFromRect(&work, MONITOR_DEFAULTTONEAREST));
+	const int32_t width = static_cast<int32_t>(std::lround(kWindowWidth * scale));
+	const int32_t height = static_cast<int32_t>(std::lround(kWindowHeight * scale));
+	const int32_t x = work.left + (std::max)(0L, (work.right - work.left - width) / 2);
+	const int32_t y = work.top + (std::max)(0L, (work.bottom - work.top - height) / 2);
+	m_hWnd = CreateWindow(kAppTitle.data(), kAppTitle.data(), WS_OVERLAPPEDWINDOW, x, y, width, height, NULL, NULL, wc.hInstance, NULL);
+	if (! m_hWnd)
+	{
+		UnregisterClass(kAppTitle.data(), wc.hInstance);
+		return 0;
+	}
+	g_dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(m_hWnd);
 
 	if (! createDeviceD3D())
 	{
@@ -160,6 +173,15 @@ void Renderer::run()
 			continue;
 		}
 
+		auto& style = ImGui::GetStyle();
+		if (style.FontScaleDpi != g_dpiScale)
+		{
+			style = ImGuiStyle();
+			setTheme();
+			style.ScaleAllSizes(g_dpiScale);
+			style.FontScaleDpi = g_dpiScale;
+		}
+
 		ImGui_ImplDX9_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
@@ -199,6 +221,15 @@ LRESULT Renderer::wndProc(HWND hWnd, uint32_t msg, WPARAM wParam, LPARAM lParam)
 
 	switch (msg)
 	{
+		case WM_NCCREATE:
+			WindowHooks::enableNonClientDpiScaling(hWnd);
+			break;
+		case WM_DPICHANGED: {
+			g_dpiScale = float(LOWORD(wParam)) / USER_DEFAULT_SCREEN_DPI;
+			const auto& rect = *reinterpret_cast<const RECT*>(lParam);
+			SetWindowPos(hWnd, nullptr, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER | SWP_NOACTIVATE);
+			return 0;
+		}
 		case WM_SIZE:
 			if (! g_pd3dDevice || wParam == SIZE_MINIMIZED)
 				return 0;

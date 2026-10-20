@@ -37,6 +37,7 @@ void MainTab::init() {}
 
 void MainTab::render()
 {
+	const float scale = ImGui::GetStyle().FontScaleDpi;
 	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_CheckMark]);
 	const char* titleText = "Toy2Debug v0.1";
 	ImGui::SetWindowFontScale(1.5f);
@@ -93,7 +94,7 @@ void MainTab::render()
 	ImGui::InputText("##game_path", g_settings.gamePath, sizeof(g_settings.gamePath), ImGuiInputTextFlags_ReadOnly);
 	ImGui::PopItemWidth();
 
-	if (ImGui::Button("Change Path", { ImGui::GetContentRegionAvail().x, 30 }))
+	if (ImGui::Button("Change Path", { ImGui::GetContentRegionAvail().x, 30 * scale }))
 	{
 		std::string selectedPath;
 
@@ -108,9 +109,9 @@ void MainTab::render()
 
 	ImGui::BeginTable("launch_options", 4, ImGuiTableFlags_SizingFixedFit);
 
-	ImGui::TableSetupColumn("Width Label", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+	ImGui::TableSetupColumn("Width Label", ImGuiTableColumnFlags_WidthFixed, 50.0f * scale);
 	ImGui::TableSetupColumn("Width Input", ImGuiTableColumnFlags_WidthStretch);
-	ImGui::TableSetupColumn("Height Label", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+	ImGui::TableSetupColumn("Height Label", ImGuiTableColumnFlags_WidthFixed, 50.0f * scale);
 	ImGui::TableSetupColumn("Height Input", ImGuiTableColumnFlags_WidthStretch);
 
 	ImGui::TableNextRow();
@@ -161,14 +162,15 @@ void MainTab::render()
 
 	if (showMapButton)
 	{
-		if (ImGui::Button("Map Game", { ImGui::GetContentRegionAvail().x, 30 }))
+		if (ImGui::Button("Map Game", { ImGui::GetContentRegionAvail().x, 30 * scale }))
 			mapGame();
 	}
 
 	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_CheckMark]);
 
-	if (ImGui::Button("Launch Game", { ImGui::GetContentRegionAvail().x, 30 }))
+	if (ImGui::Button("Launch Game", { ImGui::GetContentRegionAvail().x, 30 * scale }))
 	{
+		WindowHooks::selectMonitor(static_cast<HWND>(ImGui::GetMainViewport()->PlatformHandleRaw));
 		Settings::save();
 
 		if (! showMapButton)
